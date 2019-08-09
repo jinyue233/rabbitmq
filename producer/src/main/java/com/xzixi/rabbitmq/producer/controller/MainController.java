@@ -33,9 +33,9 @@ public class MainController {
         System.out.println("1 : "+node);
         CountDownLatch latch = new CountDownLatch(1);
         zkClient.watchPath(node, (client, event) -> {
-            System.out.println(node+": "+event.getType());
             if (TreeCacheEvent.Type.NODE_UPDATED==event.getType()) {
-                String data = new String(zkClient.synNodeData(node), Charset.forName("utf8"));
+                client.getData().forPath(node);
+                String data = new String(client.getData().forPath(node), Charset.forName("utf8"));
                 System.out.println("2 : "+node+": "+data);
                 if (StringUtils.isNotBlank(data)) {
                     latch.countDown();
@@ -53,19 +53,6 @@ public class MainController {
         System.out.println("3 : "+node+": "+data);
         zkClient.deleteNode(node, true);
         return data;
-    }
-
-    private void watch(String node, CountDownLatch latch) {
-        zkClient.watchPath(node, (client, event) -> {
-            System.out.println(node+": "+event.getType());
-            if (TreeCacheEvent.Type.NODE_UPDATED==event.getType()) {
-                String data = new String(zkClient.synNodeData(node), Charset.forName("utf8"));
-                System.out.println("2 : "+node+": "+data);
-                if (StringUtils.isNotBlank(data)) {
-                    latch.countDown();
-                }
-            }
-        });
     }
 
 }

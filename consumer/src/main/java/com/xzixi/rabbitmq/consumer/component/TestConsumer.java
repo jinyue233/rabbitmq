@@ -5,7 +5,6 @@ import com.xzixi.rabbitmq.api.entity.Message;
 import com.xzixi.rabbitmq.api.entity.User;
 import com.xzixi.rabbitmq.consumer.mapper.UserMapper;
 import com.xzixi.rabbitmq.zkclient.config.ZkClient;
-import org.apache.curator.framework.recipes.cache.TreeCacheEvent;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.Charset;
 
 @Component
-@RabbitListener(queues = Config.ROUTING_KEY)
+@RabbitListener(queues = Config.ROUTING_KEY, concurrency = "16")
 public class TestConsumer {
 
     @Autowired
@@ -29,25 +28,7 @@ public class TestConsumer {
         long now = System.currentTimeMillis();
         user.setTime(now);
         userMapper.insert(user);
-        watch(node, () -> {
-            try {
-                zkClient.setNodeData(node, String.valueOf(now).getBytes(Charset.forName("utf8")));
-            } catch (Exception e) {
-            }
-        });
-    }
-
-    private void watch(String node, Callback callback) {
-        callback.execute();
-        zkClient.watchPath(node, (client, event) -> {
-            if (TreeCacheEvent.Type.INITIALIZED==event.getType()) {
-                callback.execute();
-            }
-        });
-    }
-
-    private interface Callback {
-        void execute();
+        zkClient.setNodeData(node, String.valueOf(now).getBytes(Charset.forName("utf8")));
     }
 
 }
